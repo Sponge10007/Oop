@@ -1,65 +1,27 @@
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <stack>
+#include "geneRoom.h"
+#include "Room.h"
+#include<vector>
+#include<map>
+#include<stack>
+#include<string>
+#include<iostream>
 
-using namespace std;
-
-
-class Room {
-    private:
-        string name;
-        map<string, Room*> exits;
-        bool hasMonster;
-        bool hasPrincess;
-    public:
-        Room(string name) : name(name), hasMonster(false), hasPrincess(false) {}
-
-        string getName(){
-            return this->name;
-        }
-
-        bool ifHasMonster(){
-            return this->hasMonster;
-        }
-
-        bool ifHasPrincess(){
-            return this->hasPrincess;
-        }
-
-        map<string, Room*> getExits() {
-            return exits;
-        }
-
-        void setMonster(){
-            this->hasMonster = true;
-        }
-
-        void setPrincess(){
-            this->hasPrincess = true;
-        }
-
-        void setExits(string dir, Room* room){
-            this->exits[dir] = room;
-        }
-};
-
-void displayExitNames(vector<string> exits) {
-    if(exits.size() == 0) cout << "No exits.";
+void displayExitNames(std::vector<std::string> exits) {
+    if(exits.size() == 0) std::cout << "No exits.";
+    if(exits.size() == 1) {std::cout << exits.back(); return;}
     while(exits.size() != 0) {
         if(exits.size() == 1){
-            cout << "and " << exits.back() << ".";
+            std::cout << "and " << exits.back() << ".";
             return;
         }
-        cout << exits.back() << ", ";
+        std::cout << exits.back() << ", ";
         exits.pop_back();
     }
 }
 
 class Game {
     private:
-        vector<Room*> rooms;
+        std::vector<Room*> rooms;
         Room* current_Room;
         bool hasRescuedPrincess;
         bool hasMetMonster;
@@ -83,72 +45,25 @@ class Game {
         }
     private:
         void initializeRooms() {
-            Room* lobby = new Room("Lobby");
-            Room* dining = new Room("Dining Room");
-            Room* armory = new Room("Armory");
-            Room* tower = new Room("Tower");
-            Room* kitchen = new Room("Kitchen");
-            Room* dungeon = new Room("Dungeon");
-            Room* towerTop = new Room("Tower Top");
-            Room* pantry = new Room("Pantry");
-            Room* secretRoom = new Room("Secret Room");
-
-            lobby->setExits("east", dining);
-            lobby->setExits("west", armory);
-            lobby->setExits("up", tower);
-
-            dining->setExits("west", lobby);
-            dining->setExits("south", kitchen);
-
-            armory->setExits("east", lobby);
-            armory->setExits("down", dungeon);
-
-            tower->setExits("down", lobby);
-            tower->setExits("up", towerTop);
-
-            kitchen->setExits("north", dining);
-            kitchen->setExits("east", pantry);
-
-            pantry->setExits("west", kitchen);
-
-            dungeon->setExits("up", armory);
-            dungeon->setExits("south", secretRoom);
-
-            secretRoom->setExits("north", dungeon);
-
-            towerTop->setExits("down", tower);
-
-            rooms.push_back(lobby);
-            rooms.push_back(dining);
-            rooms.push_back(armory);
-            rooms.push_back(tower);
-            rooms.push_back(kitchen);
-            rooms.push_back(dungeon);
-            rooms.push_back(towerTop);
-            rooms.push_back(pantry);
-            rooms.push_back(secretRoom);
-
-            current_Room = lobby;
-
-            vector<Room*> possibleRooms;
-            for (Room* room : rooms) {
-                if (room != lobby) {
-                    possibleRooms.push_back(room);
-                }
-            }
-
+            int n;
+            std::cout << "Please give the number of rooms(AKA the size of the map)\n";
+            std::cin >> n;
+            mapGenerator generator;
+            rooms = generator.generate(n);
             srand(time(0));
-            int monsterIndex = rand() % possibleRooms.size();
-            int princessIndex = rand() % possibleRooms.size();
-            while (princessIndex == monsterIndex) {
-                princessIndex = rand() % possibleRooms.size();
+            int monsterIndex = rand() % rooms.size();
+            int princessIndex = rand() % rooms.size();
+            //随机设置公主和怪兽的位置，但是不能为出生点
+            while (princessIndex == monsterIndex && monsterIndex != 0 && princessIndex != 0) {
+                princessIndex = rand() % rooms.size();
             }
-            cout << possibleRooms[monsterIndex]->getName() << " Monster\n" << possibleRooms[princessIndex]->getName() << " Princess\n";
-            possibleRooms[monsterIndex]->setMonster();
-            possibleRooms[princessIndex]->setPrincess();
+            rooms[monsterIndex]->setMonster();
+            rooms[princessIndex]->setPrincess();
+            current_Room = rooms[0]; //设置出生点
         }
 
         void gameStart() {
+            std::cout << "-------------------------GAME START!-----------------------\n";
             while(!gameOver) {
                 outputRoomInfo();
                 processInput();
@@ -158,20 +73,21 @@ class Game {
         }
         
         void outputRoomInfo() {
-            vector<string> exitNames;
+            std::vector<std::string> exitNames;
             for (const auto& exit : current_Room->getExits()) {
                 exitNames.push_back(exit.first);
             }
-            cout << "Welcome to the " << current_Room->getName() << ". There are "<< exitNames.size() << " exits: ";
+            std::cout << "Welcome to the " << current_Room->getName() << ". There are "<< exitNames.size() << " exits: ";
             displayExitNames(exitNames);
-            cout << endl << "Enter your command:\n";
+            std::cout << std::endl << "Enter your command:\n";
         }
 
         void processInput() {
-            string input, direct;
+            std::string input, direct;
             bool legalInst = false, rightDir = false;
-            getline(cin, input);
-            cout << input << endl;
+            std::getline(std::cin, input);
+            // std::cout << input << std::endl;
+            //下面是用来解析命令的if语句
             if(input.find("east") > 0 && input.find("east") < input.length()) {
                 legalInst = true;
                 direct = input.substr(input.find("east"), 4);
@@ -197,14 +113,13 @@ class Game {
                 direct = input.substr(input.find("north"), 5);
             }
             if(input.substr(0,2) != "go" ) legalInst = false;
-            // cout << direct << endl;
-            if(legalInst == false) { cout << "Wrong Instruction!" << endl; return; }
-            if(!findName(direct)) { cout << "There is NO ROOM in this direction!" << endl; return; }
+            if(legalInst == false) { std::cout << "Wrong Instruction!" << std::endl; return; }
+            if(!findName(direct)) { std::cout << "There is NO ROOM in this direction!" << std::endl; return; }
             current_Room = current_Room->getExits()[direct];
-            cout << current_Room->getName() << endl;
+            std::cout << current_Room->getName() << std::endl;
         }
         
-        bool findName(string direct) {
+        bool findName(std::string direct) {
             for (const auto& exit : current_Room->getExits()) {
                 if(exit.first == direct) return true;
             }
@@ -217,8 +132,8 @@ class Game {
         }
 
         void displayEnd() {
-            if(gameLose) cout << "You have met the Monster. YOU LOSE!";
-            if(gameWin) cout << "You have rescued the Princess. YOU WIN!";
+            if(gameLose) std::cout << "You have met the Monster. YOU LOSE!";
+            if(gameWin) std::cout << "You have rescued the Princess. YOU WIN!";
         }
 };
 
